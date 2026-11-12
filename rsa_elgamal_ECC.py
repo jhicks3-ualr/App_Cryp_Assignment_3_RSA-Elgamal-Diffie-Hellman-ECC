@@ -1,7 +1,7 @@
 import math
 import random
 
-def rsa_menu():
+def rsa():
     print(f" RSA ".center(50,'='))
     n = 221
     e = 5
@@ -31,6 +31,7 @@ def rsa_menu():
         print(f" {label:<5} -> P = {P:02d} -> C = {C}")
 
     print(f"Ciphertext list: {ctext}")
+    input("Press any key to return to the previous menu...")
 
 
 def elgamal():
@@ -91,6 +92,7 @@ def elgamal():
         print(f" (C1, C2) = ({C1:02d}, {C2:02d}) | s = {C1:02d}^{d:02d} mod {p} = {s:02d}, s^-1 = {s_inv:02d} -> P = ({C2:02d} * {s_inv:02d}) mod {p} = {P_recovered:02d} ({ch})")
 
     print(f" Recovered Message: {''.join(decrypted_chars)} ")
+    input("Press any key to return to the previous menu...")
 
 def ecc_curve():
     print(f" Elliptic Curve Cryptography (ECC) ".center(50,'='))
@@ -111,7 +113,8 @@ def ecc_curve():
     print(f" Step 2: Verifying Curve ")
     print(f" Prime Check (p = {p} > 3): {'Valid Prime' if prime and p > 3 else 'Invalid'}")
     print(f" Calculation: (4*{a}^3 + 27*{b}^2) mod {p} = {4*(a**3) + 27*(b**2)} mod {p} = {discriminant}")
-    print(f" Status: {'Valid (Non-zero, curve has no sharp cusps or self-intersections)' if discriminant != 0 else 'Invalid'}\n")
+    print(f" Status: {'Valid (Non-zero, curve has no sharp cusps or self-intersections)' if discriminant != 0 else 'Invalid'}")
+    input("Press any key to return to the previous menu...")
 
 def ecc_algorithm():
     print(f" Alice and Bob Messaging ".center(50,'='))
@@ -119,52 +122,105 @@ def ecc_algorithm():
     a = 2
     b = 3
 
-    def ecc_math(P1, P2=none, k=1)
+    def ecc_math(P1, P2=None, k=1):
 
-    if k > 1 and P2 is None:
-        result = None
-        addend = P1
-        while k > 0:
-            if k & 1:
-                result = ecc_math(result, addend)
-            addend = ecc_math(addend, addend)
-            k >>= 1
-        return result
-    
-    if P1 is None:
-        return P2
-    if P2 is None:
-        return P1
+        if k > 1 and P2 is None:
+            result = None
+            addend = P1
+            while k > 0:
+                if k & 1:
+                    result = ecc_math(result, addend)
+                addend = ecc_math(addend, addend)
+                k >>= 1
+            return result
+        
+        if P1 is None:
+            return P2
+        if P2 is None:
+            return P1
 
-    x1, y1 = P1
-    x2, y2 = P2
+        x1, y1 = P1
+        x2, y2 = P2
 
-    if P1 == P2:
-        numerator = (3 * (x1 ** 2) + a) % p
-        denominator = pow(x2 - x1, -1, p)
+        if x1 == x2 and (y1 + y2) % p == 0:
+            return None
 
-    lam = (numerator * denominator) % p
-    x3 = (lam ** 2 - x1 - x2) % p
-    y3 = (lam * (x1 - x3) - y1) % p
-    return (x3, y3)
+        if P1 == P2:
+            numerator = (3 * (x1 ** 2) + a) % p
+            denominator = pow(2 * y1, -1, p)
+        else:
+            numerator = (y2 - y1) % p
+            denominator = pow(x2 - x1, -1, p)
 
-print(f" Part A: Bob's Key ".center(50,'*'))
-e1 = (2, 22)
-d = 4
-e2 = ecc_math(e1, k=d)
-print(f" Generator Point (e1) = {e1}")
-print(f" Bob's Private key (d) = {d}")
-print(f" Bob's Public Key (e2 = d * e1) = {d} * {e1} = {e2}\n")
+        lam = (numerator * denominator) % p
+        x3 = (lam ** 2 - x1 - x2) % p
+        y3 = (lam * (x1 - x3) - y1) % p
+        return (x3, y3)
+
+    print(f" Part A: Bob's Key ".center(50,'*'))
+    e1 = (2, 22)
+    d = 4
+    e2 = ecc_math(e1, k=d)
+    print(f" Generator Point (e1) = {e1}")
+    print(f" Bob's Private key (d) = {d}")
+    print(f" Bob's Public Key (e2 = d * e1) = {d} * {e1} = {e2}\n")
+
+    print(f" Part B: Alice's Key ".center(50,'*'))
+
+    P = (24, 26)
+    r = 2
+    C1 = ecc_math(e1, k=r)
+    r_e2 = ecc_math(e2, k=r)
+    C2 = ecc_math(P, r_e2)
+
+    print(f" Plaintext Point (P) = {P}")
+    print(f" Alice's Random Key (r) = {r}")
+    print(f" Step B.1: C1 = r * e1 = {r} * {e1} {C1}")
+    print(f" Step B.2: r * e2 = {r} * {e2} = {r_e2}")
+    print(f" Step B.3: C2 = P + (r * e2) = {P} + {r_e2} = {C2}")
+    print(f" Ciphertext Sent to Bob: (C1, C2) = ({C1}, {C2})\n")
+
+    print (f" Part C: Bob's Decryption Algorithm ".center(50,'*'))
+    shared_key = ecc_math(C1, k=d)
+    negate_y = (shared_key[0], (-shared_key[1]) % p)
+    P_recovered = ecc_math(C2, negate_y)
+
+    print(f" Step C.1: Shared Secret Key -> d * C1 = {d} * {C1} = {shared_key}")
+    print(f" Step C.2: Remove y coordinate -> -(d * C1) = ({shared_key[0]}, -{shared_key[1]} mod {p}) = {negate_y}")
+    print(f" Step C.3: Decryption -> P = C2 + (-(d * C1)) = {C2} + {negate_y} = {P_recovered}")
+    print(f" Recovered Plaintext: {P_recovered}")
+    input("Press any key to return to the previous menu...")
+
+def main():
+
+    while True:
+        print(" MAIN MENU ".center(50,'='))
+        print("Please select an option from the menu below...")
+        print("1. RSA")
+        print("2. Elgamal/Diffie-Hellman")
+        print("3. Elliptic Curve Validation")
+        print("4. ECC Messaging")
+        print("5. Exit")
+        selection = input("Please enter 1, 2, 3, 4, or 5: ")
+
+        match selection:
+            case '1':
+                rsa()
+            case '2':
+                elgamal()
+            case '3':
+                ecc_curve()
+            case '4':
+                ecc_algorithm()
+            case '5':
+                print("Exiting Program...")
+                quit()
+            case _:
+                print("Invalid Selection. Please enter 1, 2, 3, 4, or 5...")
+
+main()
+            
 
 
-# def main():
-
-#     print("Please select an option from the menu below...")
-#     print("1. RSA")
-#     print("2. Elgamal/Diffie-Hellman")
-#     print("3. ECC")
-#     print("4. Exit")
-#     menu_select = input("Please enter 1, 2, 3, or 4: ")
 
 
-elgamal()
